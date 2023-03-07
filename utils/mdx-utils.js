@@ -1,94 +1,100 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { serialize } from 'next-mdx-remote/serialize';
-import rehypePrism from '@mapbox/rehype-prism';
-import remarkGfm from 'remark-gfm';
+import { readContract } from '@wagmi/core';
+import { erc721ABI } from '@wagmi/core';
 
-// POSTS_PATH is useful when you want to get the path to a specific file
-export const POSTS_PATH = path.join(process.cwd(), 'posts');
-
-// postFilePaths is the list of all mdx files inside the POSTS_PATH directory
-export const postFilePaths = fs
-  .readdirSync(POSTS_PATH)
-  // Only include md(x) files
-  .filter((path) => /\.mdx?$/.test(path));
-
-export const sortPostsByDate = (posts) => {
-  return posts.sort((a, b) => {
-    const aDate = new Date(a.data.date);
-    const bDate = new Date(b.data.date);
-    return bDate - aDate;
+export const getTotalSupply = async () => {
+  const data = await readContract({
+    address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+    abi: [
+      {
+        name: 'totalSupply',
+        type: 'function',
+        stateMutability: 'view',
+        inputs: [],
+        outputs: [
+          { internalType: 'uint256', name: 'totalSupply', type: 'uint256' },
+        ],
+      },
+    ],
+    functionName: 'totalSupply',
   });
+
+  return { data };
 };
+export const getPosts = async () => {
+  const totalSupply = await getTotalSupply();
 
-export const getPosts = () => {
-  let posts = postFilePaths.map((filePath) => {
-    const source = fs.readFileSync(path.join(POSTS_PATH, filePath));
-    const { content, data } = matter(source);
+  let posts = [];
 
-    return {
-      content,
-      data,
-      filePath,
-    };
-  });
+  for (let i = 0; i < totalSupply.data.toNumber(); i++) {
+    const data = await readContract({
+      address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+      abi: erc721ABI,
+      functionName: 'tokenURI',
+      args: [i],
+    });
 
-  posts = sortPostsByDate(posts);
+    const splitedURI = data?.split('data:application/json;base64,')[1];
 
+    const decodeBase64Uri = JSON.parse(
+      Buffer.from(splitedURI, 'base64').toString('utf-8')
+    );
+
+    posts.push({
+      title: decodeBase64Uri.title,
+      text: decodeBase64Uri.text,
+      tokenId: i,
+    });
+  }
   return posts;
 };
 
-export const getPostBySlug = async (slug) => {
-  const postFilePath = path.join(POSTS_PATH, `${slug}.mdx`);
-  const source = fs.readFileSync(postFilePath);
-
-  const { content, data } = matter(source);
-
-  const mdxSource = await serialize(content, {
-    // Optionally pass remark/rehype plugins
-    mdxOptions: {
-      remarkPlugins: [remarkGfm],
-      rehypePlugins: [rehypePrism],
-    },
-    scope: data,
+export const getPostByTokenID = async (tokenId) => {
+  const data = await readContract({
+    address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+    abi: erc721ABI,
+    functionName: 'tokenURI',
+    args: [tokenId],
   });
+  const splitedURI = data?.split('data:application/json;base64,')[1];
 
-  return { mdxSource, data, postFilePath };
+  const decodeBase64Uri = JSON.parse(
+    Buffer.from(splitedURI, 'base64').toString('utf-8')
+  );
+  return decodeBase64Uri;
 };
 
-export const getNextPostBySlug = (slug) => {
-  const posts = getPosts();
-  const currentFileName = `${slug}.mdx`;
-  const currentPost = posts.find((post) => post.filePath === currentFileName);
-  const currentPostIndex = posts.indexOf(currentPost);
+// export const getNextPostByTokenID = async (tokenId) => {
+//   const posts = await getPosts();
+//   const currentFileName = tokenId;
+//   const currentPost = posts.find((post) => post.tokenId === currentFileName);
+//   const currentPostIndex = posts.indexOf(currentPost);
 
-  const post = posts[currentPostIndex - 1];
-  // no prev post found
-  if (!post) return null;
+//   const post = posts[currentPostIndex - 1];
+//   // no prev post found
+//   if (!post) return null;
 
-  const nextPostSlug = post?.filePath.replace(/\.mdx?$/, '');
+//   const nextPostTokenID = post?.tokenId;
 
-  return {
-    title: post.data.title,
-    slug: nextPostSlug,
-  };
-};
+//   return {
+//     title: post.title,
+//     tokenId: nextPostTokenID,
+//   };
+// };
 
-export const getPreviousPostBySlug = (slug) => {
-  const posts = getPosts();
-  const currentFileName = `${slug}.mdx`;
-  const currentPost = posts.find((post) => post.filePath === currentFileName);
-  const currentPostIndex = posts.indexOf(currentPost);
+// export const getPreviousPostByTokenID = async (tokenId) => {
+//   const posts = await getPosts();
+//   const currentFileName = tokenId;
+//   const currentPost = posts.find((post) => post.tokenId === currentFileName);
+//   const currentPostIndex = posts.indexOf(currentPost);
 
-  const post = posts[currentPostIndex + 1];
-  // no prev post found
-  if (!post) return null;
+//   const post = posts[currentPostIndex + 1];
+//   // no prev post found
+//   if (!post) return null;
 
-  const previousPostSlug = post?.filePath.replace(/\.mdx?$/, '');
+//   const previousPostTokenID = post?.tokenId;
 
-  return {
-    title: post.data.title,
-    slug: previousPostSlug,
-  };
-};
+//   return {
+//     title: post.title,
+//     tokenId: previousPostTokenID,
+//   };
+// };
