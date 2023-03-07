@@ -51,9 +51,7 @@ export default function Index({ globalData }) {
           Connect Wallet
         </button>
       )}
-      <div className="my-12">
-        <MintPost />
-      </div>
+      <div className="my-12">{isConnected && <MintPost />}</div>
       <main className="w-full">
         <h1 className="text-3xl lg:text-5xl text-center mb-12">
           {globalData.blogTitle}

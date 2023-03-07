@@ -18,7 +18,7 @@ export default function MintPost() {
     error: prepareError,
     isError: isPrepareError,
   } = usePrepareContractWrite({
-    address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+    address: '0x12c7159ee5Cb747859b96620cA5DEa971aa47c66',
     abi: [
       {
         name: 'safeMint',
@@ -33,6 +33,9 @@ export default function MintPost() {
       },
     ],
     functionName: 'safeMint',
+    overrides: {
+      value: '10000000000000000',
+    },
     args: [address, title, text],
     enabled: Boolean(title),
   });

@@ -3,7 +3,7 @@ import { erc721ABI } from '@wagmi/core';
 
 export const getTotalSupply = async () => {
   const data = await readContract({
-    address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+    address: '0x12c7159ee5Cb747859b96620cA5DEa971aa47c66',
     abi: [
       {
         name: 'totalSupply',
@@ -27,7 +27,7 @@ export const getPosts = async () => {
 
   for (let i = 0; i < totalSupply.data.toNumber(); i++) {
     const data = await readContract({
-      address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+      address: '0x12c7159ee5Cb747859b96620cA5DEa971aa47c66',
       abi: erc721ABI,
       functionName: 'tokenURI',
       args: [i],
@@ -50,7 +50,7 @@ export const getPosts = async () => {
 
 export const getPostByTokenID = async (tokenId) => {
   const data = await readContract({
-    address: '0xe904a8f39651c888A0993542e0A08F78e38C0eAB',
+    address: '0x12c7159ee5Cb747859b96620cA5DEa971aa47c66',
     abi: erc721ABI,
     functionName: 'tokenURI',
     args: [tokenId],
